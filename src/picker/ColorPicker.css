@@ -1,0 +1,60 @@
+.color-picker { padding: 0 22px; }
+.checkerboard { background: repeating-conic-gradient(#e7e8ed 0% 25%, #f3f4f6 0% 50%) 50% / 10px 10px; }
+.color-display { height: clamp(64px, 9vh, 106px); border: 1px solid #e2e4e9; border-radius: 9px; overflow: hidden; position: relative; display: flex; }
+.real-color { flex: 1; }
+.fallback-color { width: 50%; position: relative; }
+.fallback-color button { position: absolute; bottom: 9px; right: 8px; font-size: 9px; background: #fffdf4e8; color: #25272c; padding: 4px 7px; border-radius: 4px; border: 0; }
+.unavailable-note { flex: 1; display: grid; place-items: center; text-align: center; font-size: 10px; color: #6b6c76; padding: 12px; }
+.color-space-label { position: absolute; left: 9px; bottom: 9px; background: #ffffffed; border: 1px solid #00000008; border-radius: 4px; font-size: 9px; color: #494b55; padding: 4px 6px; font-weight: 600; pointer-events: none; }
+.color-code-fields { margin: 12px 0; display: grid; gap: 6px; }
+.color-field { height: 34px; display: flex; border: 1px solid #e2e4eb; border-radius: 6px; background: #fff; overflow: hidden; }
+.color-field:focus-within { border-color: #838bb1; box-shadow: 0 0 0 2px #6774ad12; }
+.color-field input { width: 0; min-width: 0; flex: 1; padding: 0 9px; font-family: var(--mono); font-size: 10px; color: #575c6b; outline: none; border: 0; background: transparent; }
+.color-field select { font-size: 9px; font-weight: 600; color: #838694; width: 54px; padding: 0 2px; border: none; background: #fff; }
+.field-copy { border: 0; color: #9195a3; background: transparent; padding: 8px; display: grid; place-items: center; }
+.field-copy:hover { background: #f1f2f6; color: #4d5367; }
+.fallback-note { color: #9296a2; font-size: 9px; margin: 1px 0 0; }
+.gamut-legend { display: flex; align-items: center; gap: 13px; margin: 16px 0 12px; font-size: 9px; color: #8a8f9c; }
+.gamut-legend > span { display: flex; align-items: center; gap: 5px; }
+.gamut-legend > svg { margin-left: auto; color: #a4a8b4; }
+.gamut-legend i { width: 12px; height: 4px; display: block; border: 1px solid #b8bdc7; }
+.gamut-legend .srgb-line { background: #6c7dd6; border-color: #6c7dd6; }
+.gamut-legend .p3-line { background: #fff; }
+.gamut-legend .rec-line { background: #242831; border-color: #242831; }
+.picker-section { margin-bottom: 14px; }
+.picker-section-heading { display: flex; align-items: center; justify-content: space-between; margin-bottom: 9px; }
+.picker-section h3 { font-size: 12px; letter-spacing: -.15px; font-weight: 600; margin: 0; display: flex; gap: 6px; align-items: center; }
+.picker-section h3 svg { color: #9198ae; }
+.number-field { display: flex; align-items: center; height: 29px; width: 111px; border: 1px solid #e0e3eb; background: white; border-radius: 5px; }
+.number-field:focus-within { border-color: #838bb1; }
+.number-field kbd { font-family: var(--mono); font-size: 9px; margin-left: 8px; color: #a2a7b2; }
+.number-field input { padding: 0 5px; width: 62px; border: none; background: transparent; font-family: var(--mono); font-size: 11px; color: #4b5367; outline: none; }
+.spin-buttons { display: flex; flex-direction: column; border-left: 1px solid #eff0f4; width: 20px; height: 100%; }
+.spin-buttons button { padding: 0; border: none; background: transparent; color: #9399a9; display: grid; place-items: center; flex: 1; }
+.spin-buttons button:hover { background: #edf0f7; color: #465371; }
+.invalid { border-color: #c35664; }
+.gamut-chart { position: relative; height: clamp(65px, 9vh, 110px); border: 1px solid #dfe2e8; border-radius: 5px; cursor: crosshair; touch-action: none; overflow: hidden; }
+.gamut-chart canvas { position: absolute; width: 100%; height: 100%; border-radius: 4px; inset: 0; pointer-events: none; }
+.chart-crosshair { position: absolute; transform: translate(-50%, 50%); width: 100%; height: 100%; pointer-events: none; }
+.chart-crosshair::before { content: ''; position: absolute; left: 50%; top: 0; width: 1px; height: 100%; background: #ffffff69; mix-blend-mode: difference; }
+.chart-crosshair::after { content: ''; position: absolute; left: 0; top: 50%; height: 1px; width: 100%; background: #ffffff69; mix-blend-mode: difference; }
+.chart-crosshair span { position: absolute; z-index: 1; left: 50%; top: 50%; width: 8px; height: 8px; border-radius: 50%; border: 1.5px solid white; box-shadow: 0 0 1px 1px #0007; transform: translate(-50%, -50%); }
+.chart-axis { position: absolute; pointer-events: none; background: #ffffffe0; color: #767d8c; border-radius: 2px; padding: 1px 3px; font-size: 8px; font-family: var(--mono); }
+.chart-axis.y { left: 4px; top: 4px; }.chart-axis.x { right: 4px; bottom: 4px; }
+.gamut-range { height: 20px; position: relative; border: 1px solid #e0e2e8; border-radius: 4px; margin-top: 8px; }
+.gamut-range canvas { width: 100%; height: 100%; position: absolute; inset: 0; border-radius: 3px; }
+.gamut-range input { appearance: none; position: absolute; inset: 0 -6px; width: calc(100% + 12px); height: 100%; margin: 0; cursor: pointer; background: transparent; }
+.gamut-range input::-webkit-slider-thumb { appearance: none; height: 14px; width: 14px; border: 3px solid white; border-radius: 3px; background: var(--thumb-color); box-shadow: 0 1px 4px #0005; transform: rotate(45deg); }
+.gamut-range input::-moz-range-thumb { height: 9px; width: 9px; border: 3px solid white; border-radius: 3px; background: var(--thumb-color); box-shadow: 0 1px 4px #0005; transform: rotate(45deg); }
+.range-labels { display: flex; justify-content: space-between; font-family: var(--mono); font-size: 8px; color: #a2a7b2; margin-top: 4px; }
+.hue-note { display: flex; gap: 9px; align-items: flex-start; font-size: 10px; line-height: 1.65; color: #858b9c; background: #f0f2f8; padding: 10px 11px; border: 1px solid #e6e9f1; border-radius: 6px; margin-top: 9px; }
+.hue-note svg { margin-top: 3px; color: #7c87ad; }
+.hue-note strong { font-weight: 400; color: #676f84; }
+.picker-shortcuts { font-size: 8px; color: #a3a8b4; text-align: center; padding: 7px 0 0; margin: 0; }
+@media (max-height: 950px) {
+  .gamut-chart { height: clamp(56px, 7.5vh, 72px); }
+  .color-display { height: 64px; }
+  .picker-section { margin-bottom: 10px; }
+  .picker-section-heading { margin-bottom: 7px; }
+  .gamut-legend { margin-top: 12px; margin-bottom: 10px; }
+}

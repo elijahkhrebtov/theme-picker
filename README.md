@@ -1,35 +1,38 @@
-# React + TypeScript + Vite
+# Theme studio
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+A desktop workspace for building paired light and dark UI themes in OKLCH.
 
-Currently, two official plugins are available:
-
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
-
-## React Compiler
-
-The React Compiler is enabled on this template. See [this documentation](https://react.dev/learn/react-compiler) for more information.
-
-Note: This will impact Vite dev & build performances.
-You can also try [the experimental native React Compiler support in plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react/README.md#rust-react-compiler) by using `compiler: true` in the plugin options instead of using the Babel plugin.
-
-## Expanding the Oxlint configuration
-
-If you are developing a production application, we recommend enabling type-aware lint rules by installing `oxlint-tsgolint` and editing `.oxlintrc.json`:
-
-```json
-{
-  "$schema": "./node_modules/oxlint/configuration_schema.json",
-  "plugins": ["react", "typescript", "oxc"],
-  "options": {
-    "typeAware": true
-  },
-  "rules": {
-    "react/rules-of-hooks": "error",
-    "react/only-export-components": ["warn", { "allowConstantExport": true }]
-  }
-}
+```sh
+npm install
+npm run dev
 ```
 
-See the [Oxlint rules documentation](https://oxc.rs/docs/guide/usage/linter/rules) for the full list of rules and categories.
+Open the local Vite URL. The columns run left to right: dark preview, light preview, color editor, and theme variables. The previews scroll together while the editor and variable list stay pinned.
+
+Select a variable in either theme to edit its lightness and chroma. Hue is shared by all 23 variables in both themes. Changes update previews immediately and are saved to localStorage under `theme-studio:v1`.
+
+The editor includes interactive gamut graphs, gradient sliders with gamut boundary stops, editable CSS colors, HEX/RGB/HSL output, display support warnings, and a clickable sRGB fallback. Graphs, Display P3, and Rec2020 are always enabled. Press L/C/H to focus a number field, use arrow keys to adjust, or hold Shift for smaller steps. Number fields also accept arithmetic expressions.
+
+Use **Copy CSS** to export all 46 custom properties in `:root` and `.dark` rules. **View CSS** provides a selectable export when clipboard access is unavailable. **Reset palette** restores the defaults after confirmation.
+
+## Validation
+
+```sh
+npm run build
+npm run lint
+npx playwright install chromium
+npm test
+```
+
+Browser tests cover graph rendering, column order and scrolling, live edits, shared hue, persistence, expressions and precision stepping, color parsing, gamut fallback, CSS export, preview controls, and corrupted storage recovery. The test runner starts a local Vite server automatically if needed.
+
+## Source
+
+- `src/theme.ts`: token definitions, defaults, storage validation, CSS export.
+- `src/picker/`: color conversion, copied arithmetic parser, adapted gamut chart/slider rendering, React editor.
+- `src/Showcase.tsx`: interactive component examples for each theme.
+- `src/App.tsx`: workspace and theme editing state.
+
+Relevant picker code was copied and adapted from the `oklch-picker` submodule; the application does not import from the submodule. Its MIT license is preserved in `src/picker/LICENSE`. The adapted renderer uses the original `@colordx/core` and `@colordx/gpu` libraries and has a 2D canvas fallback for browsers without WebGL2.
+
+The workspace is intentionally designed for large desktop monitors, with a minimum width of 1400px. Display gamut availability depends on the browser and monitor.
