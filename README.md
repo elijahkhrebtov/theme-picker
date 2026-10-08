@@ -21,6 +21,8 @@ Existing saved palettes receive defaults for new tokens while retaining all prev
 
 Use **Copy CSS** to export all 108 custom properties in `:root` and `.dark` rules. **View CSS** provides a selectable export when clipboard access is unavailable. **Reset palette** restores the defaults after confirmation.
 
+Use **Import CSS** to paste current or previous exports. Recognized color variables in `:root` and `.dark` are applied to their corresponding themes. Missing variables remain unchanged; extra variables and invalid color declarations are ignored. If no usable colors match, the modal shows an error and leaves both themes untouched. Imported hues are preserved exactly, including after reload; changing a hue in the picker still links that family across both themes.
+
 ## Validation
 
 ```sh
@@ -30,7 +32,7 @@ npx playwright install chromium
 npm test
 ```
 
-Browser tests cover graph rendering, column order and scrolling, live edits, shared hue, persistence, expressions and precision stepping, color parsing, gamut fallback, CSS export, preview controls, status colors and interaction states, collapsible sections and internal scrolling, legacy palette migration, and corrupted storage recovery. The test runner starts a local Vite server automatically if needed.
+Browser tests cover graph rendering, column order and scrolling, live edits, shared hue, persistence, expressions and precision stepping, color parsing, gamut fallback, CSS export, preview controls, status colors and interaction states, collapsible sections and internal scrolling, legacy palette migration, CSS import and export round trips, and corrupted storage recovery. The test runner starts a local Vite server automatically if needed.
 
 ## Source
 

@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react'
-import { Check, ChevronRight, Copy, Layers2, Moon, RotateCcw, SlidersHorizontal, Sun } from 'lucide-react'
+import { Check, ChevronRight, Copy, Download, Layers2, Moon, RotateCcw, SlidersHorizontal, Sun } from 'lucide-react'
 import type { Color, ThemeMode } from './theme'
 import { cssColor, defaultThemes, displayName, exportCSS, hueFamily, loadThemes, sharedHueTokens, STORAGE_KEY, tokenGroups, tokens } from './theme'
 import Showcase from './Showcase'
 import ColorPicker from './picker/ColorPicker'
+import ImportDialog from './ImportDialog'
 import './App.css'
 
 function App() {
@@ -15,13 +16,14 @@ function App() {
   const [copyError, setCopyError] = useState(false)
   const [exportOpen, setExportOpen] = useState(false)
   const [resetOpen, setResetOpen] = useState(false)
+  const [importOpen, setImportOpen] = useState(false)
   useEffect(() => {
     let unavailable = false
     try { localStorage.setItem(STORAGE_KEY, JSON.stringify(themes)) } catch { unavailable = true }
     queueMicrotask(() => setStorageError(unavailable))
   }, [themes])
   useEffect(() => {
-    const escape = (event: KeyboardEvent) => { if (event.key === 'Escape') { setExportOpen(false); setResetOpen(false) } }
+    const escape = (event: KeyboardEvent) => { if (event.key === 'Escape') { setExportOpen(false); setResetOpen(false); setImportOpen(false) } }
     window.addEventListener('keydown', escape)
     return () => window.removeEventListener('keydown', escape)
   }, [])
@@ -47,7 +49,7 @@ function App() {
   return <>
     <header className="app-header">
       <div className="brand"><span className="brand-symbol"><Layers2 size={19} strokeWidth={1.7} /></span><h1>Theme studio<span className="brand-dot">.</span></h1><span className="brand-divider" /><span className="brand-description">A palette. Two perspectives.</span></div>
-      <div className="header-actions"><span className={`save-status ${storageError ? 'save-error' : ''}`}><i />{storageError ? 'Storage unavailable' : 'Saved locally'}</span><button className="header-button" onClick={() => setResetOpen(true)}><RotateCcw size={13} />Reset palette</button><button className="header-button export-button" onClick={() => setExportOpen(true)}>View CSS<ChevronRight size={13} /></button></div>
+      <div className="header-actions"><span className={`save-status ${storageError ? 'save-error' : ''}`}><i />{storageError ? 'Storage unavailable' : 'Saved locally'}</span><button className="header-button" onClick={() => setResetOpen(true)}><RotateCcw size={13} />Reset palette</button><button className="header-button export-button" onClick={() => setImportOpen(true)}><Download size={13} />Import CSS</button><button className="header-button export-button" onClick={() => setExportOpen(true)}>View CSS<ChevronRight size={13} /></button></div>
     </header>
     <main className="workspace">
       <div className="showcase-pair"><Showcase theme="dark" variables={themes.dark} /><Showcase theme="light" variables={themes.light} /></div>
@@ -67,6 +69,7 @@ function App() {
       </aside>
     </main>
     {exportOpen && <div className="dialog-backdrop" onClick={e => { if (e.target === e.currentTarget) setExportOpen(false) }}><section className="css-dialog" role="dialog" aria-modal="true" aria-labelledby="export-title"><div className="dialog-heading"><div><div className="eyebrow">READY FOR YOUR STYLESHEET</div><h2 id="export-title">Your theme, in CSS.</h2></div><button autoFocus className="header-button" onClick={() => setExportOpen(false)}>Close</button></div><p>Use <code>:root</code> for light mode and add the <code>dark</code> class for dark mode.</p>{copyError && <p className="copy-error">Clipboard access is unavailable. Select and copy the CSS below.</p>}<textarea aria-label="Exported theme CSS" value={exportCSS(themes)} readOnly onFocus={e => e.currentTarget.select()} /><button className="copy-css" onClick={copyCSS}>{copied ? <Check size={14} /> : <Copy size={14} />}{copied ? 'Copied!' : 'Copy both themes'}</button></section></div>}
+    {importOpen && <ImportDialog onClose={() => setImportOpen(false)} onApply={updates => setThemes(previous => ({ light: { ...previous.light, ...updates.light }, dark: { ...previous.dark, ...updates.dark } }))} />}
     {resetOpen && <div className="dialog-backdrop" onClick={e => { if (e.target === e.currentTarget) setResetOpen(false) }}><section className="reset-dialog" role="dialog" aria-modal="true" aria-labelledby="reset-title"><h2 id="reset-title">Reset the palette?</h2><p>This replaces both themes with the original palette.</p><div><button autoFocus className="header-button" onClick={() => setResetOpen(false)}>Keep editing</button><button className="reset-confirm" onClick={() => { setThemes(defaultThemes()); setResetOpen(false) }}>Reset both themes</button></div></section></div>}
   </>
 }

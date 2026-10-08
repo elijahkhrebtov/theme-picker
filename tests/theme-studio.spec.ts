@@ -301,3 +301,129 @@ test('shares status hues within each family across themes and preserves them on 
     expect(theme['text-danger'].h).toBe(35)
   }
 })
+
+const openImport = async (page: import('@playwright/test').Page, css: string) => {
+  await page.getByRole('button', { name: 'Import CSS', exact: true }).click()
+  const input = page.getByRole('textbox', { name: 'CSS to import' })
+  await expect(input).toBeFocused()
+  await input.fill(css)
+}
+const exportedCSS = async (page: import('@playwright/test').Page) => {
+  await page.getByRole('button', { name: 'View CSS' }).click()
+  const css = await page.getByRole('textbox', { name: 'Exported theme CSS' }).inputValue()
+  await page.getByRole('button', { name: 'Close', exact: true }).click()
+  return css
+}
+
+test('imports a current export exactly and preserves individual hues after reload', async ({ page }) => {
+  await page.goto('/')
+  const expected = await savedThemes(page)
+  const css = (await exportedCSS(page))
+    .replace('--accent: oklch(55% 0.205 265);', '--accent: oklch(61% 0.12 240);')
+    .replace('--success: oklch(73% 0.14 145);', '--success: oklch(71% 0.13 160);')
+  expected.light.accent = { l: .61, c: .12, h: 240 }
+  expected.dark.success = { l: .71, c: .13, h: 160 }
+  await page.getByRole('spinbutton', { name: 'Hue', exact: true }).fill('110')
+  await page.getByRole('spinbutton', { name: 'Hue', exact: true }).press('Enter')
+  await openImport(page, css)
+  await page.getByRole('button', { name: 'Apply CSS' }).click()
+  await expect(page.getByRole('dialog')).not.toBeVisible()
+  expect(await savedThemes(page)).toEqual(expected)
+  await expect(page.getByRole('spinbutton', { name: 'Hue', exact: true })).toHaveValue('240')
+  await expect(page.locator('.showcase-light')).toHaveCSS('background-color', 'oklch(0.975 0.006 265)')
+  await page.reload()
+  expect(await savedThemes(page)).toEqual(expected)
+  // The picker still links its family when the user next edits hue.
+  await page.getByRole('spinbutton', { name: 'Hue', exact: true }).fill('230')
+  await page.getByRole('spinbutton', { name: 'Hue', exact: true }).press('Enter')
+  const linked = await savedThemes(page)
+  expect(linked.dark.accent.h).toBe(230)
+  expect(linked.light['background-primary'].h).toBe(230)
+  expect(linked.dark.success.h).toBe(160)
+})
+
+test('imports the previous 23-token export while leaving new tokens untouched', async ({ page }) => {
+  await page.goto('/')
+  const original = await savedThemes(page)
+  const css = (await exportedCSS(page)).split('\n').filter(line => !/--(?:accent-disabled|success|warning|danger|text-(?:success|warning|danger)|border-(?:success|warning|danger))/.test(line)).join('\n')
+  expect(css.match(/--[\w-]+:/g)).toHaveLength(46)
+  await page.getByRole('spinbutton', { name: 'Hue', exact: true }).fill('210')
+  await page.getByRole('spinbutton', { name: 'Hue', exact: true }).press('Enter')
+  const before = await savedThemes(page)
+  await openImport(page, css)
+  await page.getByRole('button', { name: 'Apply CSS' }).click()
+  const imported = await savedThemes(page)
+  for (const mode of ['light', 'dark']) {
+    for (const token of Object.keys(original[mode])) {
+      const newToken = token === 'accent-disabled' || /success|warning|danger/.test(token)
+      expect(imported[mode][token]).toEqual(newToken ? before[mode][token] : original[mode][token])
+    }
+  }
+  await page.reload()
+  expect(await savedThemes(page)).toEqual(imported)
+})
+
+test('imports only matching valid declarations and ignores extras without injecting CSS', async ({ page }) => {
+  await page.goto('/')
+  await page.getByRole('tab', { name: 'Dark', exact: true }).click()
+  const expected = await savedThemes(page)
+  await openImport(page, `
+    /* Old and current OKLCH notation, partial themes, and unrelated CSS. */
+    :root {
+      --surface-1: oklch(0.88 0.025 210) !important;
+      --surface-2: definitely-not-a-color;
+      --unknown: oklch(50% 0.1 50);
+      --accent: oklch(50% 0.9 210);
+    }
+    .dark { --danger-disabled: oklch(45% 0.045 32); }
+    .unrelated { --accent: #f00; }
+    .app-header { display: none; }
+    :root { --text-secondary: #ff0000; }
+    .dark { --danger-disabled: oklch(47% 0.04 35); }
+  `)
+  await page.getByRole('button', { name: 'Apply CSS' }).click()
+  const imported = await savedThemes(page)
+  expected.light['surface-1'] = { l: .88, c: .025, h: 210 }
+  expected.dark['danger-disabled'] = { l: .47, c: .04, h: 35 }
+  expect(imported.light['text-secondary'].h).toBeCloseTo(29.23, 1)
+  expected.light['text-secondary'] = imported.light['text-secondary']
+  expect(imported).toEqual(expected)
+  await expect(page.getByRole('heading', { name: 'Theme studio.' })).toBeVisible()
+  const surface = page.locator('.showcase-light .demo-surface-1')
+  await expect(surface).toHaveCSS('background-color', 'oklch(0.88 0.025 210)')
+  await page.reload()
+  expect(await savedThemes(page)).toEqual(expected)
+})
+
+test('invalid imports show an error without changing the palette and can be corrected', async ({ page }) => {
+  await page.goto('/')
+  const before = await savedThemes(page)
+  await openImport(page, '')
+  const input = page.getByRole('textbox', { name: 'CSS to import' })
+  for (const css of ['', 'not css', ':root { --unknown: #abc; }', ':root { --accent: broken; }', '.other { --accent: #abc; }', ':root { --accent: oklch(50% 0.9 265); }']) {
+    await input.fill(css)
+    await page.getByRole('button', { name: 'Apply CSS' }).click()
+    await expect(page.getByRole('alert')).toContainText('No valid matching colors found')
+    await expect(input).toHaveAttribute('aria-invalid', 'true')
+    expect(await savedThemes(page)).toEqual(before)
+  }
+  await input.fill(':root { --accent: oklch(60% 0.15 220); }')
+  await expect(page.getByRole('alert')).not.toBeVisible()
+  await page.getByRole('button', { name: 'Apply CSS' }).click()
+  await expect(page.getByRole('dialog')).not.toBeVisible()
+  const expected = { ...before, light: { ...before.light, accent: { l: .6, c: .15, h: 220 } } }
+  expect(await savedThemes(page)).toEqual(expected)
+})
+
+test('closing the import modal does not apply pasted CSS', async ({ page }) => {
+  await page.goto('/')
+  const before = await savedThemes(page)
+  for (const close of ['button', 'escape', 'backdrop']) {
+    await openImport(page, ':root { --accent: oklch(60% 0.15 220); }')
+    if (close === 'button') await page.getByRole('button', { name: 'Close', exact: true }).click()
+    else if (close === 'escape') await page.keyboard.press('Escape')
+    else await page.locator('.dialog-backdrop').click({ position: { x: 5, y: 5 } })
+    await expect(page.getByRole('dialog')).not.toBeVisible()
+    expect(await savedThemes(page)).toEqual(before)
+  }
+})

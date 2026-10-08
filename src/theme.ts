@@ -71,7 +71,10 @@ export function loadThemes(): Themes {
         // New tokens receive defaults without losing an existing saved palette.
         if (value === undefined) { restored[mode][token].h = tokenHue; continue }
         if (!value || !Number.isFinite(value.l) || !Number.isFinite(value.c) || value.l < 0 || value.l > 1 || value.c < 0 || value.c > .47) return defaults
-        restored[mode][token] = { l: value.l, c: value.c, h: tokenHue }
+        // Imports may contain individual hues. Only picker hue edits link tokens.
+        const savedHue = value.h === undefined ? tokenHue : value.h
+        if (!Number.isFinite(savedHue) || savedHue < 0 || savedHue > 360) return defaults
+        restored[mode][token] = { l: value.l, c: value.c, h: savedHue }
       }
     }
     return restored
