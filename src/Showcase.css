@@ -117,10 +117,10 @@
 .demo-checkboxes input:focus-visible + .demo-check { outline: 2px solid var(--border-accented); outline-offset: 3px; }
 .demo-disabled-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-top: 17px; border-top: 1px solid var(--border); padding-top: 14px; }
 .demo-disabled { color: var(--text-tertiary); cursor: not-allowed; }
-.demo-disabled .demo-check { background: var(--surface-3); color: var(--text-tertiary); }
+.demo-disabled .demo-check { background: var(--accent-disabled); color: var(--accent-text-secondary); border-color: var(--accent-border); }
 .showcase .demo-button:disabled { color: var(--text-tertiary); background: var(--surface-3); border-color: var(--border); }
-.showcase .demo-switch:disabled { background: var(--surface-3); border-color: var(--border); }
-.showcase .demo-switch:disabled > span { background: var(--text-tertiary); }
+.showcase .demo-button-primary:disabled, .showcase .demo-switch.is-on:disabled { background: var(--accent-disabled); color: var(--accent-text-secondary); border-color: var(--accent-border); }
+.showcase .demo-switch.is-on:disabled > span { background: var(--accent-text-secondary); }
 .demo-project-card > .demo-card-heading { padding: 17px 16px 14px; }
 .demo-project-title { display: flex; align-items: center; gap: 10px; }
 .demo-project-title h4 { font-size: 12px; }
@@ -177,3 +177,23 @@
 .demo-invite .demo-button { flex-shrink: 0; }
 .demo-footer { display: flex; align-items: center; justify-content: space-between; color: var(--text-tertiary); font-size: 10px; padding: 28px 0 32px; margin-top: 5px; }
 .demo-footer-mark { color: var(--text-secondary); font-size: 23px; line-height: 1; }
+
+.demo-status-stack { display: grid; gap: 14px; }
+.demo-status-card { padding: 17px; border: 1px solid var(--border); border-radius: 8px; background: var(--surface-1); }
+.demo-status-heading { display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-bottom: 13px; }
+.demo-status-badge { color: var(--status-text); border: 1px solid var(--status-outline); border-radius: 4px; padding: 3px 6px; font-size: 8px; font-weight: 600; }
+.demo-status-alert { padding: 13px; background: var(--status-background); border: 1px solid var(--status-border); border-radius: 6px; color: var(--status-primary); }
+.demo-status-title { display: flex; align-items: center; gap: 8px; }
+.demo-status-title svg { flex-shrink: 0; }
+.demo-status-title h5 { font-size: 11px; font-weight: 650; }
+.demo-status-alert p { color: var(--status-secondary); font-size: 10px; margin-top: 6px; line-height: 1.7; }
+.demo-status-alert small { display: block; color: var(--status-tertiary); font-size: 8px; margin-top: 9px; }
+.demo-status-input, .demo-status-input:focus { border-color: var(--status-outline); }
+.demo-status-input:focus-visible { outline-color: var(--status-outline); }
+.demo-status-validation { display: flex; align-items: center; gap: 5px; color: var(--status-text); font-size: 9px; padding-top: 7px; }
+.demo-status-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
+.demo-status-button { background: var(--status-background); color: var(--status-primary); border-color: var(--status-border); }
+.demo-status-button:hover { background: var(--status-hover); }
+.demo-status-button:active { background: var(--status-active); }
+.demo-status-button:focus-visible { outline-color: var(--status-outline); }
+.showcase .demo-status-button:disabled { background: var(--status-disabled); color: var(--status-secondary); border-color: var(--status-border); }

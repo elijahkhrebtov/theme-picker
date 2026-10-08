@@ -32,8 +32,18 @@
 .theme-tabs button:hover { color: #485572; }
 .copy-css { width: 100%; display: flex; align-items: center; gap: 8px; padding: 9px 11px; color: #65738f; background: #f7f9fc; border: 1px solid #e3e8f1; border-radius: 5px; font-size: 10px; font-weight: 500; margin-top: 10px; }
 .copy-css span { margin-left: auto; font-family: var(--mono); font-size: 8px; font-weight: 400; color: #9ca5b6; }.copy-css:hover { background: #eff3fa; border-color: #cdd6e7; }
-.token-list { padding: 10px 9px 14px; overflow-y: auto; scrollbar-width: thin; scrollbar-color: #e1e5ee transparent; }
-.token-group h3 { font-weight: 500; font-size: 9px; color: #a0a6b5; padding: 0 9px; margin: 15px 0 7px; }.token-group:first-child h3 { margin-top: 5px; }
+.token-list { flex: 1; min-height: 0; overscroll-behavior-y: contain; padding: 10px 9px 14px; overflow-y: auto; scrollbar-width: thin; scrollbar-color: #e1e5ee transparent; }
+.token-group { margin-top: 7px; }
+.token-group:first-child { margin-top: 0; }
+.token-group summary { display: flex; align-items: center; gap: 6px; list-style: none; cursor: pointer; padding: 8px; border-radius: 5px; color: #8c95a8; }
+.token-group summary::-webkit-details-marker { display: none; }
+.token-group summary:hover { background: #f6f8fb; }
+.token-group summary:focus-visible { outline: 2px solid #829cd0; outline-offset: -2px; }
+.token-group summary > svg { transition: transform 120ms; flex-shrink: 0; }
+.token-group[open] summary > svg { transform: rotate(90deg); }
+.token-group h3 { font-weight: 600; font-size: 9px; margin: 0; }
+.group-count { font-family: var(--mono); font-size: 8px; color: #b0b7c4; margin-left: auto; }
+.group-selected { width: 5px; height: 5px; border-radius: 50%; background: #6a85bd; }
 .token-row { display: flex; align-items: center; gap: 7px; width: 100%; height: 28px; text-align: left; color: #626b7d; background: transparent; border: 1px solid transparent; border-radius: 5px; padding: 0 8px; }
 .token-row:hover { background: #f6f8fb; }.token-row.selected { background: #edf2fc; border-color: #dce5f8; color: #536faa; }
 .token-swatch { width: 12px; height: 12px; flex-shrink: 0; border-radius: 3px; border: 1px solid #919db02e; }

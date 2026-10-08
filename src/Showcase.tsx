@@ -1,5 +1,12 @@
 import { useId, useState, type CSSProperties, type ReactNode } from 'react'
+import type { StatusFamily } from './theme'
 import './Showcase.css'
+
+const statusExamples: { family: StatusFamily; title: string; description: string; detail: string; action: string; badge: string; field: string; value: string; validation: string }[] = [
+  { family: 'success', title: 'Your changes are published.', description: 'The latest version is ready for your team.', detail: 'Synced just now · All checks passed', action: 'Acknowledge', badge: 'Published', field: 'Workspace address', value: 'studio-north', validation: 'This address is available.' },
+  { family: 'warning', title: 'You’re close to your storage limit.', description: 'Review large files to keep uploads running smoothly.', detail: '4.6 GB of 5 GB used · Review recommended', action: 'Review files', badge: 'Needs review', field: 'Storage quota', value: '4.6 GB / 5 GB', validation: 'Your workspace is almost full.' },
+  { family: 'danger', title: 'We couldn’t complete the upload.', description: 'Your work is safe. Try again when you’re ready.', detail: 'Upload interrupted · Action required', action: 'Retry upload', badge: 'Upload failed', field: 'Contact email', value: 'alex@', validation: 'Enter a complete email address.' },
+]
 
 type ShowcaseProps = {
   theme: 'light' | 'dark'
@@ -37,6 +44,7 @@ export default function Showcase({ theme, variables }: ShowcaseProps) {
   const [bannerDismissed, setBannerDismissed] = useState(false)
   const [invite, setInvite] = useState('')
   const [inviteSent, setInviteSent] = useState(false)
+  const [handledStatuses, setHandledStatuses] = useState<Record<string, boolean>>({})
   const styles = Object.fromEntries(Object.entries(variables).map(([name, color]) => [
     `--${name}`, `oklch(${color.l * 100}% ${color.c} ${color.h})`,
   ])) as CSSProperties
@@ -98,7 +106,7 @@ export default function Showcase({ theme, variables }: ShowcaseProps) {
           <label><input type="checkbox" checked={updates} onChange={(event) => setUpdates(event.target.checked)} /><span className="demo-check"><Icon name="check" size={12} /></span>Product updates</label>
           <label><input type="checkbox" checked={mentions} onChange={(event) => setMentions(event.target.checked)} /><span className="demo-check"><Icon name="check" size={12} /></span>Only mentions</label>
         </div>
-        <div className="demo-disabled-row"><label className="demo-disabled"><input type="checkbox" checked disabled /><span className="demo-check"><Icon name="check" size={12} /></span>Unavailable</label><button type="button" className="demo-switch is-on" role="switch" aria-checked="true" aria-label="Disabled notification setting" disabled><span /></button><button type="button" className="demo-button demo-button-secondary" disabled>Disabled</button></div>
+        <div className="demo-disabled-row"><label className="demo-disabled"><input type="checkbox" checked disabled /><span className="demo-check"><Icon name="check" size={12} /></span>Unavailable</label><button type="button" className="demo-switch is-on" role="switch" aria-checked="true" aria-label="Disabled notification setting" disabled><span /></button><button type="button" className="demo-button demo-button-primary" disabled>Disabled</button></div>
       </div>
 
       <SectionLabel number="04">Navigation & content</SectionLabel>
@@ -118,6 +126,25 @@ export default function Showcase({ theme, variables }: ShowcaseProps) {
         <div className="demo-member-list">{[['AL', 'Alex Lane', 'Product designer', 'Owner'], ['SK', 'Sam Kim', 'Frontend developer', 'Member'], ['JM', 'Jordan Miles', 'Creative director', 'Member']].map(([initials, name, role, membership]) => <button type="button" className="demo-member" key={initials} onClick={() => setInvite(name)}><span className="demo-avatar">{initials}</span><span className="demo-member-info"><strong>{name}</strong><small>{role}</small></span><span className="demo-member-role">{membership}</span></button>)}</div>
         <form className="demo-invite" onSubmit={(event) => { event.preventDefault(); if (invite.trim()) setInviteSent(true) }}><input className="demo-input" aria-label="Invite teammate email" type="text" placeholder="Invite a teammate…" value={invite} onChange={(event) => { setInvite(event.target.value); setInviteSent(false) }} /><button type="submit" className="demo-button demo-button-primary">{inviteSent ? <Icon name="check" size={15} /> : <Icon name="plus" size={15} />}{inviteSent ? 'Sent' : 'Invite'}</button></form>
       </div>
+      <SectionLabel number="06">Status & feedback</SectionLabel>
+      <div className="demo-status-stack">{statusExamples.map(({ family, title, description, detail, action, badge, field, value, validation }) => {
+        const statusStyles = Object.fromEntries([
+          ['background', family], ['hover', `${family}-hover`], ['active', `${family}-active`], ['disabled', `${family}-disabled`],
+          ['primary', `${family}-text-primary`], ['secondary', `${family}-text-secondary`], ['tertiary', `${family}-text-tertiary`],
+          ['border', `${family}-border`], ['text', `text-${family}`], ['outline', `border-${family}`],
+        ].map(([role, token]) => [`--status-${role}`, `var(--${token})`])) as CSSProperties
+        return <article key={family} className={`demo-status-card demo-status-${family}`} style={statusStyles} aria-label={`${family.charAt(0).toUpperCase() + family.slice(1)} feedback`}>
+          <div className="demo-status-heading"><h4>{family.charAt(0).toUpperCase() + family.slice(1)}</h4><span className="demo-status-badge">{badge}</span></div>
+          <div className="demo-status-alert" role="note">
+            <div className="demo-status-title"><Icon name={family === 'success' ? 'check' : family === 'warning' ? 'bell' : 'file'} size={17} /><h5>{title}</h5></div>
+            <p>{description}</p><small>{detail}</small>
+          </div>
+          <label className="demo-field-label" htmlFor={`${id}-${family}`}>{field}</label>
+          <input className="demo-input demo-status-input" id={`${id}-${family}`} defaultValue={value} aria-invalid={family === 'danger'} aria-describedby={`${id}-${family}-validation`} />
+          <p className="demo-status-validation" id={`${id}-${family}-validation`}><Icon name={family === 'success' ? 'check' : 'bell'} size={12} />{validation}</p>
+          <div className="demo-status-actions"><button type="button" className="demo-button demo-status-button" aria-pressed={!!handledStatuses[family]} onClick={() => setHandledStatuses(previous => ({ ...previous, [family]: !previous[family] }))}>{handledStatuses[family] ? <><Icon name="check" size={13} />Done</> : action}</button><button type="button" className="demo-button demo-status-button" disabled>{action}</button></div>
+        </article>
+      })}</div>
       <footer className="demo-footer"><span>Every detail, in your colors.</span><span className="demo-footer-mark">◈</span></footer>
     </section>
   )

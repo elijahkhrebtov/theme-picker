@@ -17,7 +17,7 @@ test('renders four columns, GPU graphs, and synchronized scrolling', async ({ pa
   })
   await page.goto('/')
   await expect(page.getByRole('heading', { name: 'Theme studio.' })).toBeVisible()
-  await expect(page.locator('.token-row')).toHaveCount(23)
+  await expect(page.locator('.token-row')).toHaveCount(54)
   const columns = await page.locator('.showcase-dark, .showcase-light, .editor-pane, .variables-pane').evaluateAll(nodes => nodes.map(node => node.getBoundingClientRect().x))
   expect(columns).toEqual([...columns].sort((a, b) => a - b))
   await expect(page.locator('.gpu-chart')).toHaveCount(3)
@@ -36,7 +36,7 @@ test('renders four columns, GPU graphs, and synchronized scrolling', async ({ pa
   expect(errors).toEqual([])
 })
 
-test('changes only selected lightness/chroma, shares hue across every token, persists on reload', async ({ page }) => {
+test('changes only selected lightness/chroma, shares core hue across both themes, persists on reload', async ({ page }) => {
   await page.goto('/')
   await page.getByRole('spinbutton', { name: 'Lightness', exact: true }).fill('0.61')
   await page.getByRole('spinbutton', { name: 'Lightness', exact: true }).press('Enter')
@@ -49,7 +49,11 @@ test('changes only selected lightness/chroma, shares hue across every token, per
   await page.getByRole('spinbutton', { name: 'Hue', exact: true }).fill('145')
   await page.getByRole('spinbutton', { name: 'Hue', exact: true }).press('Enter')
   themes = await savedThemes(page)
-  for (const theme of Object.values(themes) as Record<string, { h: number }>[]) expect(Object.values(theme).every(c => c.h === 145)).toBe(true)
+  for (const theme of Object.values(themes) as Record<string, { h: number }>[]) {
+    expect(Object.entries(theme).filter(([token]) => !/success|warning|danger/.test(token)).every(([, color]) => color.h === 145)).toBe(true)
+    expect(theme.warning.h).toBe(85)
+    expect(theme.danger.h).toBe(25)
+  }
   const liveColor = await page.locator('.showcase-light').evaluate(node => (node as HTMLElement).style.getPropertyValue('--accent'))
   expect(liveColor).toBe('oklch(61% 0.14 145)')
   await page.getByRole('tab', { name: 'Dark', exact: true }).click()
@@ -110,7 +114,7 @@ test('exports valid custom properties for both themes and copies them', async ({
   const css = await page.evaluate(() => navigator.clipboard.readText())
   expect(css).toMatch(/^:root \{/)
   expect(css).toContain('\n.dark {')
-  expect(css.match(/--[\w-]+: oklch\(/g)).toHaveLength(46)
+  expect(css.match(/--[\w-]+: oklch\(/g)).toHaveLength(108)
   expect(await page.evaluate(css => { const style = document.createElement('style'); style.textContent = css; document.head.append(style); return style.sheet!.cssRules.length }, css)).toBe(2)
   await page.getByRole('button', { name: 'View CSS' }).click()
   await expect(page.getByRole('textbox', { name: 'Exported theme CSS' })).toHaveValue(css)
@@ -138,7 +142,7 @@ test('recovers corrupted storage', async ({ page }) => {
   await page.addInitScript(key => localStorage.setItem(key, '{"light":{}}'), storageKey)
   await page.goto('/')
   await expect(page.getByRole('spinbutton', { name: 'Hue', exact: true })).toHaveValue('265')
-  await expect(page.locator('.token-row')).toHaveCount(23)
+  await expect(page.locator('.token-row')).toHaveCount(54)
 })
 
 test('renders gamut graphs without WebGL2', async ({ page }) => {
@@ -170,4 +174,130 @@ test('provides selectable CSS when clipboard permission is denied', async ({ pag
   await expect(page.getByRole('dialog')).toBeVisible()
   await expect(page.getByText('Clipboard access is unavailable.', { exact: false })).toBeVisible()
   await expect(page.getByRole('textbox', { name: 'Exported theme CSS' })).toHaveValue(/:root[\s\S]*\.dark/)
+})
+
+
+test('variable sections collapse independently and scroll without moving previews', async ({ page }) => {
+  await page.goto('/')
+  const list = page.locator('.token-list')
+  expect(await list.evaluate(node => node.scrollHeight > node.clientHeight)).toBe(true)
+  const surfaces = page.locator('.token-group').filter({ has: page.getByRole('heading', { name: 'Surfaces', exact: true }) })
+  await surfaces.locator('summary').click()
+  await expect(surfaces).not.toHaveAttribute('open', '')
+  await expect(surfaces.locator('.token-row').first()).not.toBeVisible()
+  await surfaces.locator('summary').focus()
+  await page.keyboard.press('Enter')
+  await expect(surfaces).toHaveAttribute('open', '')
+  const before = await page.evaluate(() => window.scrollY)
+  const box = (await list.boundingBox())!
+  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2)
+  await page.mouse.wheel(0, 1500)
+  await expect.poll(() => list.evaluate(node => node.scrollTop)).toBeGreaterThan(100)
+  expect(await page.evaluate(() => window.scrollY)).toBe(before)
+  await expect(page.getByRole('button', { name: /^Copy CSS/ })).toBeVisible()
+  await expect(page.getByRole('tab', { name: 'Dark', exact: true })).toBeVisible()
+  await page.getByRole('button', { name: /^Danger disabled oklch/ }).click()
+  await expect(page.locator('.editor-title h2')).toHaveText('Danger disabled')
+  const danger = page.locator('.token-group').filter({ has: page.getByRole('heading', { name: 'Danger', exact: true }) })
+  await danger.locator('summary').click()
+  await expect(danger.getByLabel('Contains selected variable')).toBeVisible()
+  await expect(page.locator('.editor-title h2')).toHaveText('Danger disabled')
+})
+
+test('status families update actual foregrounds, borders, disabled, hover and active states', async ({ page }) => {
+  await page.goto('/')
+  const light = page.getByRole('region', { name: 'light theme preview' })
+  const dark = page.getByRole('region', { name: 'dark theme preview' })
+  const setColor = async (token: string, value: string) => {
+    await page.locator('.token-row').filter({ has: page.locator('.token-name', { hasText: new RegExp(`^${token}$`) }) }).click()
+    await page.getByRole('textbox', { name: 'OKLCH color', exact: true }).fill(value)
+    await page.getByRole('textbox', { name: 'OKLCH color', exact: true }).press('Enter')
+  }
+  const computed = async (selector: import('@playwright/test').Locator, property: string) => selector.evaluate((node, property) => getComputedStyle(node).getPropertyValue(property), property)
+  for (const family of ['Success', 'Warning', 'Danger']) {
+    const card = light.getByRole('article', { name: `${family} feedback` })
+    const lower = family.toLowerCase()
+    await setColor(`${family} text secondary`, 'oklch(81% 0.06 265)')
+    await expect.poll(() => computed(card.locator('.demo-status-alert p'), 'color')).toBe('oklch(0.81 0.06 265)')
+    await setColor(`Text ${lower}`, 'oklch(41% 0.08 265)')
+    await expect.poll(() => computed(card.locator('.demo-status-validation'), 'color')).toBe('oklch(0.41 0.08 265)')
+    await setColor(`Border ${lower}`, 'oklch(59% 0.1 265)')
+    await expect.poll(() => computed(card.locator('.demo-status-input'), 'border-top-color')).toBe('oklch(0.59 0.1 265)')
+    await setColor(`${family} disabled`, 'oklch(75% 0.04 265)')
+    await expect.poll(() => computed(card.locator('.demo-status-button:disabled'), 'background-color')).toBe('oklch(0.75 0.04 265)')
+    await setColor(`${family} hover`, 'oklch(46% 0.12 265)')
+    await setColor(`${family} active`, 'oklch(39% 0.11 265)')
+    const action = card.locator('.demo-status-button:not(:disabled)')
+    await action.hover()
+    await expect.poll(() => computed(action, 'background-color')).toBe('oklch(0.46 0.12 265)')
+    await page.mouse.down()
+    await expect.poll(() => computed(action, 'background-color')).toBe('oklch(0.39 0.11 265)')
+    await page.mouse.up()
+    await expect(action).toHaveAttribute('aria-pressed', 'true')
+    await expect(dark.getByRole('article', { name: `${family} feedback` }).locator('.demo-status-button:not(:disabled)')).toHaveAttribute('aria-pressed', 'false')
+  }
+  await setColor('Accent disabled', 'oklch(71% 0.03 265)')
+  await expect.poll(() => computed(light.locator('.demo-disabled .demo-check'), 'background-color')).toBe('oklch(0.71 0.03 265)')
+  await expect.poll(() => computed(light.getByRole('switch', { name: 'Disabled notification setting' }), 'background-color')).toBe('oklch(0.71 0.03 265)')
+  await expect.poll(() => computed(light.getByRole('button', { name: 'Disabled', exact: true }), 'background-color')).toBe('oklch(0.71 0.03 265)')
+  await page.reload()
+  const themes = await savedThemes(page)
+  expect(themes.light['danger-active'].l).toBe(.39)
+  expect(themes.dark['danger-active'].l).toBe(.67)
+})
+
+test('adds new defaults to a saved legacy palette without losing edits', async ({ page }) => {
+  await page.goto('/')
+  const legacy = await savedThemes(page)
+  for (const mode of ['light', 'dark']) {
+    for (const token of Object.keys(legacy[mode])) {
+      if (token === 'accent-disabled' || /^(success|warning|danger|text-(success|warning|danger)|border-(success|warning|danger))/.test(token)) delete legacy[mode][token]
+      else legacy[mode][token].h = 210
+    }
+    expect(Object.keys(legacy[mode])).toHaveLength(23)
+  }
+  legacy.light.accent.l = .63
+  legacy.dark['surface-1'].c = .032
+  await page.evaluate(({ key, data }) => localStorage.setItem(key, JSON.stringify(data)), { key: storageKey, data: legacy })
+  await page.reload()
+  const migrated = await savedThemes(page)
+  expect(migrated.light.accent).toEqual({ l: .63, c: .205, h: 210 })
+  expect(migrated.dark['surface-1'].c).toBe(.032)
+  for (const theme of Object.values(migrated) as Record<string, { h: number }>[]) {
+    expect(Object.keys(theme)).toHaveLength(54)
+    expect(Object.entries(theme).filter(([token]) => !/success|warning|danger/.test(token)).every(([, color]) => color.h === 210)).toBe(true)
+    expect(theme.success.h).toBe(145)
+    expect(theme.warning.h).toBe(85)
+    expect(theme.danger.h).toBe(25)
+  }
+  await expect(page.locator('.token-count')).toHaveText('54 tokens')
+})
+
+
+test('shares status hues within each family across themes and preserves them on reload', async ({ page }) => {
+  await page.goto('/')
+  for (const [family, hue] of [['Success', 160], ['Warning', 95], ['Danger', 30]] as const) {
+    await page.locator('.token-row').filter({ has: page.locator('.token-name', { hasText: new RegExp(`^${family}$`) }) }).click()
+    await page.getByRole('spinbutton', { name: 'Hue', exact: true }).fill(String(hue))
+    await page.getByRole('spinbutton', { name: 'Hue', exact: true }).press('Enter')
+    await expect(page.locator('.hue-note')).toContainText(`${family}: 20 linked variables.`)
+    const themes = await savedThemes(page)
+    for (const theme of Object.values(themes) as Record<string, { h: number }>[]) {
+      expect(Object.entries(theme).filter(([token]) => token.includes(family.toLowerCase())).every(([, color]) => color.h === hue)).toBe(true)
+      expect(theme.accent.h).toBe(265)
+      expect(theme['surface-1'].h).toBe(265)
+    }
+  }
+  await page.getByRole('tab', { name: 'Dark', exact: true }).click()
+  await page.getByRole('spinbutton', { name: 'Hue', exact: true }).fill('35')
+  await page.getByRole('spinbutton', { name: 'Hue', exact: true }).press('Enter')
+  await page.reload()
+  const themes = await savedThemes(page)
+  for (const theme of Object.values(themes) as Record<string, { h: number }>[]) {
+    expect(theme.success.h).toBe(160)
+    expect(theme.warning.h).toBe(95)
+    expect(theme.danger.h).toBe(35)
+    expect(theme['danger-text-secondary'].h).toBe(35)
+    expect(theme['text-danger'].h).toBe(35)
+  }
 })

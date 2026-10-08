@@ -113,7 +113,7 @@ function PickerSection({ axis, color, onChange, p3 }: { axis: Axis; color: Color
   }
   return <section className="picker-section">
     <div className="picker-section-heading">
-      <h3>{label} {axis === 'h' && <Link2 size={12} aria-label="Shared across all variables" />}</h3>
+      <h3>{label} {axis === 'h' && <Link2 size={12} aria-label="Shared across both themes" />}</h3>
       <div className={`number-field ${invalid ? 'invalid' : ''}`}>
         <kbd>{axis.toUpperCase()}</kbd>
         <input ref={inputRef} aria-label={label} role="spinbutton" aria-valuemin={0} aria-valuemax={max} aria-valuenow={color[axis]} aria-invalid={invalid} inputMode="decimal"
@@ -146,7 +146,7 @@ function PickerSection({ axis, color, onChange, p3 }: { axis: Axis; color: Color
     <div className="range-labels"><span>0</span><span>{axis === 'h' ? '360°' : max}</span></div>
   </section>
 }
-export default function ColorPicker({ color, onChange }: { color: Color; onChange: (patch: Partial<Color>) => void }) {
+export default function ColorPicker({ color, onChange, hueScope, hueCount }: { color: Color; onChange: (patch: Partial<Color>) => void; hueScope: string; hueCount: number }) {
   const support = useDisplaySupport()
   const [format, setFormat] = useState('hex')
   const visible = visibleColor(color, support.p3, support.rec2020)
@@ -169,7 +169,7 @@ export default function ColorPicker({ color, onChange }: { color: Color; onChang
     </div>
     <div className="gamut-legend"><span><i className="srgb-line" />sRGB</span><span><i className="p3-line" />P3</span><span><i className="rec-line" />Rec2020</span><Globe2 size={12} /></div>
     {(['l', 'c', 'h'] as const).map(axis => <PickerSection key={axis} axis={axis} color={color} onChange={onChange} p3={support.p3} />)}
-    <div className="hue-note"><Link2 size={13} /><span>One hue, both themes.<br /><strong>Hue updates all 46 variables.</strong></span></div>
+    <div className="hue-note"><Link2 size={13} /><span>One hue, both themes.<br /><strong>{hueScope}: {hueCount} linked variables.</strong></span></div>
     <p className="picker-shortcuts">L / C / H to focus · ↑ ↓ to adjust · Shift for precision</p>
   </div>
 }
